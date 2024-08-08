@@ -237,6 +237,7 @@ Serial LTE modem
 * Added:
 
   * DTLS support for the ``#XUDPSVR`` and ``#XSSOCKET`` (UDP server sockets) AT commands when the :file:`overlay-native_tls.conf` configuration file is used.
+  * Kconfig option :kconfig:option:`CONFIG_SLM_PPP_FALLBACK_MTU` to be able to control the MTU used by PPP when the cellular link MTU is not returned by the modem (with ``AT+CGCONTRDP=0``).
 
 * Removed:
 
