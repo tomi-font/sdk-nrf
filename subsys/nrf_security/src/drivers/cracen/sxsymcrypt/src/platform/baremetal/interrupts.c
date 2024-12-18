@@ -17,8 +17,8 @@
 #include <zephyr/sys/__assert.h>
 #include <silexpk/core.h>
 #include <nrf_security_events.h>
-
-
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(cracen, CONFIG_CRACEN_LOG_LEVEL);
 NRF_SECURITY_EVENT_DEFINE(cracen_irq_event_for_cryptomaster)
 NRF_SECURITY_EVENT_DEFINE(cracen_irq_event_for_pke)
 
@@ -28,6 +28,8 @@ void cracen_interrupts_init(void)
 	nrf_security_event_init(cracen_irq_event_for_pke);
 
 	IRQ_CONNECT(CRACEN_IRQn, 0, cracen_isr_handler, NULL, 0);
+
+	LOG_DBG("done");
 }
 
 #ifdef __NRF_TFM__
@@ -44,6 +46,7 @@ void CRACEN_IRQHandler(void)
 void cracen_isr_handler(void *i)
 {
 	if (nrf_cracen_event_check(NRF_CRACEN, NRF_CRACEN_EVENT_CRYPTOMASTER)) {
+		LOG_DBG("Received CRYPTOMASTER.");
 		uint32_t crypto_master_status = sx_rdreg(REG_INT_STATRAW);
 
 		/* Clear interrupts in CryptoMaster. */
@@ -56,6 +59,7 @@ void cracen_isr_handler(void *i)
 		nrf_security_event_set(cracen_irq_event_for_cryptomaster, crypto_master_status);
 
 	} else if (nrf_cracen_event_check(NRF_CRACEN, NRF_CRACEN_EVENT_PKE_IKG)) {
+		LOG_DBG("Received PKEIKG.");
 		/* Clear interrupts in PKE. */
 		sx_clear_interrupt(sx_get_current_req());
 
@@ -65,6 +69,7 @@ void cracen_isr_handler(void *i)
 		/* Signal waiting threads. */
 		nrf_security_event_set(cracen_irq_event_for_pke, 1);
 	} else {
+		LOG_ERR("UNHANDLED INTERRUPT");
 		__ASSERT(0, "Unhandled interrupt. ");
 	}
 }
@@ -78,6 +83,7 @@ static uint32_t cracen_wait_for_interrupt(nrf_security_event_t event)
 	 * condition between reading this event and clearing it.
 	 */
 	nrf_security_event_clear(event, 0xFFFFFFFF);
+	LOG_DBG("Done waiting for interrupt.");
 
 	return ret;
 }
@@ -92,11 +98,12 @@ uint32_t cracen_wait_for_cm_interrupt(void)
 		return 0;
 	}
 #endif
-
+	LOG_DBG("Waiting for cryptomaster interrupt...");
 	return cracen_wait_for_interrupt(cracen_irq_event_for_cryptomaster);
 }
 
 uint32_t cracen_wait_for_pke_interrupt(void)
 {
+	LOG_DBG("Waiting for PKE interrupt...");
 	return cracen_wait_for_interrupt(cracen_irq_event_for_pke);
 }

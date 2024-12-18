@@ -27,7 +27,8 @@
 #include <sxsymcrypt/sha3.h>
 #include <zephyr/sys/util.h>
 #include <psa/nrf_platform_key_ids.h>
-
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(cracen, LOG_LEVEL_DBG);
 #define NOT_ENABLED_CURVE    (0)
 #define NOT_ENABLED_HASH_ALG (0)
 
@@ -42,6 +43,9 @@ static const uint8_t RSA_ALGORITHM_IDENTIFIER[] = {0x06, 0x09, 0x2a, 0x86, 0x48,
 
 psa_status_t silex_statuscodes_to_psa(int ret)
 {
+	if (ret != SX_OK)
+		LOG_ERR("err %d", ret);
+
 	switch (ret) {
 	case SX_OK:
 	case SX_ERR_READY:
