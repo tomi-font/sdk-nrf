@@ -360,11 +360,18 @@ psa_status_t cracen_ecc_check_public_key(const struct sx_pk_ecurve *curve,
 	}
 
 	/* Step 4 of the checks, we do (order * pnt) and we expect to get the
-	 * point of infinity as a result. The Cracen returns
-	 * SX_ERR_NOT_INVERTIBLE and not SX_ERR_POINT_AT_INFINITY as expected
+	 * point of infinity as a result, though CRACEN doesn't return
+	 * SX_ERR_POINT_AT_INFINITY as would be expected.
 	 */
 	sx_status = sx_ecp_ptmult(curve, &n, in_pnt, &scratch_pnt);
-	if (sx_status == SX_ERR_NOT_INVERTIBLE) {
+#if defined(CONFIG_CRACEN_HW_VERSION_BASE)
+	enum { EXPECTED_ERR_CODE = SX_ERR_NOT_INVERTIBLE };
+#elif defined(CONFIG_CRACEN_HW_VERSION_LITE)
+	enum { EXPECTED_ERR_CODE = SX_ERR_OUT_OF_RANGE };
+#else
+#error Misconfiguration?
+#endif
+	if (sx_status == EXPECTED_ERR_CODE) {
 		psa_status = PSA_SUCCESS;
 	} else {
 		psa_status = (sx_status == SX_OK) ? PSA_ERROR_INVALID_ARGUMENT
